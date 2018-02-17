@@ -52,19 +52,17 @@ wordlist = load_words()
 
 
 def is_word_guessed(secret_word, letters_guessed):
-    '''
-    secret_word: string, the word the user is guessing; assumes all letters are
-      lowercase
-    letters_guessed: list (of letters), which letters have been guessed so far;
-      assumes that all letters are lowercase
-    returns: boolean, True if all the letters of secret_word are in letters_guessed;
-      False otherwise
-    '''
-    letters_combined = ''.join(letters_guessed)
-    if secret_word == letters_combined:
-        return True
-    else:
-        return False
+  '''
+  secret_word: string, the word the user is guessing; assumes all letters are
+    lowercase
+  letters_guessed: list (of letters), which letters have been guessed so far;
+    assumes that all letters are lowercase
+  returns: boolean, True if all the letters of secret_word are in letters_guessed;
+    False otherwise
+  '''
+
+  # Used a set because double letters are not considered
+  return set(secret_word) <= set(letters_guessed)
 
 
 
@@ -75,18 +73,15 @@ def get_guessed_word(secret_word, letters_guessed):
     returns: string, comprised of letters, underscores (_), and spaces that represents
       which letters in secret_word have been guessed so far.
     '''
-    my_list_simply = []
-    for letter in secret_word:          #this moves the secret word into a list
-        my_list_simply.append(letter)
-        
-        for letter in my_list_simply:           #This substitutes the _ and space when the
-            if letter not in letters_guessed:   #letter is not guessed
-                index = my_list_simply.index(letter)
-                my_list_simply[index] = '_ '
+    guessed = ''
+
+    for letter in secret_word:
+      if letter in letters_guessed:
+          guessed += letter
+      else:
+        guessed += '_ '
     
-    my_list_combined = ''.join(my_list_simply)
-    
-    return my_list_combined
+    return guessed
 
 
 
@@ -96,13 +91,13 @@ def get_available_letters(letters_guessed):
     returns: string (of letters), comprised of letters that represents which letters have not
       yet been guessed.
     '''
-    lower_case_letters= string.ascii_lowercase
-    list_of_unused_letters = ''
-    for letter in lower_case_letters:
+    available = ''
+    for letter in string.ascii_lowercase:
         if letter not in letters_guessed:
-            list_of_unused_letters = list_of_unused_letters + letter
-    return list_of_unused_letters
-
+            available += letter
+    return available
+    
+    
 
 def hangman(secret_word):
     '''
@@ -129,58 +124,43 @@ def hangman(secret_word):
     
     Follows the other limitations detailed in the problem write-up.
     '''
-    secret_word = 'david'
-    guesses = 6
-    warning = 3
-    letters_guessed = []
-    letters_used = []
-    print('Welcome to the game Hangman')
-    print('I am thinking of a word that is', len(secret_word), 'letters long')
     
+    secret_word = 'david'
+    letters_guessed = []
+    guesses = 6
+    last_guess = 1
+    warnings = 3
+
+    print('Welcome to the game Hangman!')
+    print('I am thinking of a game that is {} letters long.'.format(len(secret_word)))
     
     while not is_word_guessed(secret_word, letters_guessed):
-        print('---------------------------')
-        print('You have', guesses, 'guesses left.')
-        print('Available letters:', get_available_letters(letters_used))
-        guess = input('Please guess a letter: ')
-        
-        while guess not in string.ascii_letters:
-            guess = input('Please guess a letter: ')
-            guess = guess.lower()
-            
-            if warning <= 0:
-                warning -= 1
-            if warning == 0:
-                guesses -= 1
-            
-            if warning <= 0:
-                print('Oops! That is not a valid letter. You have', guesses, 'guesses left')
-                guess = input()
-            else:
-                print('Oops! That is not a valid letter. You have', warning, 'warnings left')    
-                guess = input()
+      print('------------------')
+      print('Available letters: {}'.format(get_available_letters(letters_guessed)))
+      print('You have {} guesses left'.format(guesses))
+      user_guess = input('Please Guess a letter: ').lower()
+      
+      if user_guess not in string.ascii_lowercase:
+        if warnings >= 1:
+          print('\nOops! That is not a valid letter. You have {} warnings left. {}'.format(warnings))
+      
+      if user_guess in letters_guessed:
+        if warnings >= 1:
+          print('\nOops! That is not a valid letter. You have {} warnings left. {}'.format(warnings))
 
-        
-        letters_used.append(guess)
-        if guess in secret_word:
-            letters_guessed.append(guess)
-            print('Good guess: ', get_guessed_word(secret_word, letters_guessed))
-        else:
-            print('Oops! That letter is not in my word:', get_guessed_word(secret_word, letters_used))
-            vowels = ['a', 'e', 'i', 'o', 'u']
-            if warning <= 0 and guess in vowels:
-                guesses -= 2
-                print('You have lost two points')
-            elif warning <= 0:
-                warning -= 2
-            if warning == 0 and guess not in vowels:
-                guesses -= 1
-            elif warning == 0:
-                guesses -= 1
-        if guesses == 0:
-            print('---------------------------')
-            print('Sorry, You ran out of guesses. The word was', secret_word)
-            break
+      if user_guess in secret_word and len(user_guess) == 1:
+        letters_guessed.append(user_guess)
+        print('\nGood guess: {}'.format(get_guessed_word(secret_word, letters_guessed)))
+      else:
+        if guesses <= last_guess:
+          print('\nYou Lost, Sorry.')
+          break
+        print('\nOops! That letter is not in my word: {}'.format(get_guessed_word(secret_word, letters_guessed)))
+        guesses -= 1
+    
+    if is_word_guessed(secret_word, letters_guessed):
+      print('You won!!!')
+
 
 
 # When you've completed your hangman function, scroll down to the bottom
